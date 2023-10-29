@@ -16,3 +16,5 @@
 !.gitignore
 !README.md
 !.vscode/*.json
+!*.db
+!*.so
