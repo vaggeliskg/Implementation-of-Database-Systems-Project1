@@ -2,11 +2,13 @@
 #define HP_FILE_H
 #include <record.h>
 
-
+typedef struct {
+    int block_records;
+} HP_block_info;
 
 /* Η δομή HP_info κρατάει μεταδεδομένα που σχετίζονται με το αρχείο σωρού*/
 typedef struct {
-    
+    int file_records;
 } HP_info;
 
 /*Η συνάρτηση HP_CreateFile χρησιμοποιείται για τη δημιουργία και

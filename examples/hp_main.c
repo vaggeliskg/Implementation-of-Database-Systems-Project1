@@ -19,10 +19,10 @@
 
 int main() {
   BF_Init(LRU);
-
+  printf("main:filename:%s\n", FILE_NAME);
   HP_CreateFile(FILE_NAME);
   int file_desc;
-
+  printf("main:file_desc:%d\n", file_desc);
   HP_info* hp_info2=HP_OpenFile(FILE_NAME, &file_desc);
   
   Record record;
