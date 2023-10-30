@@ -41,12 +41,15 @@ int HP_CreateFile(char *fileName){
     //block_info = (HP_block_info *) block + BF_BLOCK_SIZE - sizeof(HP_block_info);
     
     //pinfo->file_records = 4;
-
+    HP_info* p;
+    p =(HP_info*) BF_Block_GetData(block);
+    printf("create block data: %d\n",p->file_records);
 
     BF_Block_SetDirty(block);
-    //BF_UnpinBlock(block);
+    BF_UnpinBlock(block);
     //BF_Block_Destroy(&block);
-    BF_CloseFile(file);
+    BF_ErrorCode err = BF_CloseFile(file);
+    BF_PrintError(err);
     //printf("closed--1\n");
 	
     // DEBUG
@@ -64,20 +67,21 @@ int HP_CreateFile(char *fileName){
 HP_info* HP_OpenFile(char *fileName, int *file_desc){    
   printf("open:filename:%d\n", *fileName);
 
-	BF_OpenFile(fileName, file_desc);
+	BF_ErrorCode err =  BF_OpenFile(fileName, file_desc);
+  BF_PrintError(err);
   printf("open:filedesc:%d\n", *file_desc);
+  BF_Block *block = NULL;
+  BF_Block_Init(&block);            // it may not be necessary
+  BF_AllocateBlock(*file_desc,block);     //allocate the first block of the file
 
 	//printf("opened--1\n");
-	BF_Block* block = NULL;
-	BF_Block_Init(&block);
+
 	
-	BF_GetBlock(*file_desc, 1 , block);
-	
-	void* data;
-	data = BF_Block_GetData(block);
-	
+	BF_ErrorCode err2 = BF_GetBlock(*file_desc, 0 , block);
+  BF_PrintError(err);
+		
 	HP_info* hp_info;
-  hp_info = (HP_info*)block;
+  hp_info = (HP_info*)BF_Block_GetData(block);
   
 	//memcpy(hp_info, data, sizeof(data));
 
@@ -108,7 +112,7 @@ HP_info* HP_OpenFile(char *fileName, int *file_desc){
 
 	//info = (HP_info*) block + BF_BLOCK_SIZE - sizeof(HP_block_info);
 
-	BF_UnpinBlock(block);
+	//BF_UnpinBlock(block);
 	BF_Block_Destroy(&block);
 	
 	return hp_info;
@@ -117,7 +121,11 @@ HP_info* HP_OpenFile(char *fileName, int *file_desc){
 
 
 int HP_CloseFile(int file_desc,HP_info* hp_info ){
-    
+    BF_Block *block = NULL;
+    BF_Block_Init(&block);   
+    BF_ErrorCode err2 = BF_GetBlock(file_desc, 0 , block);
+    BF_PrintError(err2);
+    BF_UnpinBlock(block);
     //printf("FILEEEE: %d\n",file_desc);
     BF_ErrorCode err = BF_CloseFile(file_desc);
     //printf("closed--2\n");
