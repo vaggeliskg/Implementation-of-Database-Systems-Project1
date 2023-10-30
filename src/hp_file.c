@@ -49,6 +49,7 @@ int HP_CreateFile(char *fileName){
     error = BF_UnpinBlock(block);
     if( error != BF_OK) { BF_PrintError(error); return -1; }
 
+    BF_Block_Destroy(&block);
     error = BF_CloseFile(file);
     if( error != BF_OK) { BF_PrintError(error); return -1; }
 	
@@ -83,10 +84,10 @@ HP_info* HP_OpenFile(char *fileName, int *file_desc){
 	printf("open:file_records: %d\n", hp_info->file_records);
 
 
-	error = BF_UnpinBlock(block);
-  if( error != BF_OK) { BF_PrintError(error);  exit(EXIT_FAILURE); }
+	//error = BF_UnpinBlock(block);
+  //if( error != BF_OK) { BF_PrintError(error);  exit(EXIT_FAILURE); }
 
-	//BF_Block_Destroy(&block);
+	BF_Block_Destroy(&block);
 	
 	return hp_info;
 
@@ -94,23 +95,28 @@ HP_info* HP_OpenFile(char *fileName, int *file_desc){
 
 
 int HP_CloseFile(int file_desc,HP_info* hp_info ){
+    BF_ErrorCode error;
+
     BF_Block *block = NULL;
     BF_Block_Init(&block);   
-    BF_ErrorCode err2 = BF_GetBlock(file_desc, 0 , block);
-    BF_PrintError(err2);
-    BF_UnpinBlock(block);
-    //printf("FILEEEE: %d\n",file_desc);
-    BF_ErrorCode err = BF_CloseFile(file_desc);
-    //printf("closed--2\n");
-    if( err != BF_OK) {
-     BF_PrintError(err);
-     printf("\nerror_code:%d\n", err);
-      return -1;
-    }
-    else{
-      printf("gooood\n");
-      return 0;
-    } 
+    int block_num;
+    error = BF_GetBlockCounter(file_desc, &block_num);
+	  if( error != BF_OK) { BF_PrintError(error);  return -1; }
+
+
+    error = BF_GetBlock(file_desc, block_num - 1 , block);
+    if( error != BF_OK) { printf("\n"); BF_PrintError(error);  return -1; }
+    
+    error = BF_UnpinBlock(block);
+    if( error != BF_OK) { printf("\n"); BF_PrintError(error);  return -1; }
+    BF_Block_Destroy(&block);
+    
+    
+    error = BF_CloseFile(file_desc);
+    if( error != BF_OK) { BF_PrintError(error);  return -1; }
+
+    printf("\ngooood\n");
+    return 0;
 }
 
 int HP_InsertEntry(int file_desc,HP_info* hp_info, Record record){
