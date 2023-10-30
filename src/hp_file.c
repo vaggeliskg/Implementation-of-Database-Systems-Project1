@@ -9,111 +9,84 @@
 #define CALL_BF(call)       \
 {                           \
   BF_ErrorCode code = call; \
-  if (code != BF_OK) {         \
+  if (code != BF_OK) {      \
     BF_PrintError(code);    \
     return HP_ERROR;        \
   }                         \
 }
 
 int HP_CreateFile(char *fileName){
-    BF_CreateFile(fileName);          // create en empty file
+    BF_ErrorCode error;
+    
+    /*ΔΕΝ ΘΕΛΕΙ CREATE ΓΙΑΤΙ ΥΠΑΡΧΕΙ ΗΔΗ ΤΟ ΑΡΧΕΙΟ, ΑΠΛΑ ΚΑΝΟΥΜΕ OPENFILE*/
+    /*ΑΝ ΚΑΝΕΙΣ CREATE ΘΑ ΒΓΑΛΕΙ ERRORCODE 4, ΔΗΛΑΔΗ BF_FILE_ALREADY_EXISTS*/
+    //error =  BF_CreateFile(fileName);           // create en empty file
+    //if( error != BF_OK) { BF_PrintError(error); return -1; }
     printf("create:filename:%d\n", *fileName);
     
-    int file;                         // file reco
-    BF_OpenFile(fileName, &file);
+    int file;                                   // file reco
+    error = BF_OpenFile(fileName, &file);
+    if( error != BF_OK) { BF_PrintError(error); return -1; }
     printf("create_file:filedesc:%d\n",file);
 
     BF_Block *block = NULL;
-    BF_Block_Init(&block);            // it may not be necessary
-    BF_AllocateBlock(file,block);     //allocate the first block of the file
+    BF_Block_Init(&block);
+    error = BF_AllocateBlock(file,block);       //allocate the first block of the file
+    if( error != BF_OK) { BF_PrintError(error); return -1; }
+    
+    HP_info* info;
+    
+    info = (HP_info*) BF_Block_GetData(block);
+    info->file_records = 69;
 
-
-    
-    //HP_info *block_info;
-    
-    HP_info* jj_gamiesai;
-    //HP_info *pinfo;
-    jj_gamiesai = (HP_info*) BF_Block_GetData(block);
-    jj_gamiesai->file_records = 12;
-    //memcpy(block, &jj_gamiesai, sizeof(HP_info));
-    //pinfo = (HP_info*)block;
-    
-    //block_info = (HP_block_info *) block + BF_BLOCK_SIZE - sizeof(HP_block_info);
-    
-    //pinfo->file_records = 4;
+    // START TESTING
     HP_info* p;
     p =(HP_info*) BF_Block_GetData(block);
-    printf("create block data: %d\n",p->file_records);
-
+    printf("create:file_records %d\n", p->file_records);
+    // STOP TESTING
+    
     BF_Block_SetDirty(block);
-    BF_UnpinBlock(block);
-    //BF_Block_Destroy(&block);
-    BF_ErrorCode err = BF_CloseFile(file);
-    BF_PrintError(err);
-    //printf("closed--1\n");
-	
-    // DEBUG
-    // printf("1.%d\n", block_info->number_of_records);                 
-    // printf("3.%ld\n", sizeof(HP_block_info));
-    // printf("5.%p____%p\n", block, block_info);
-    // printf("1.%p\n", data); 
-    // printf("1.%p\n", &block_info->number_of_records);
-    //printf("FILE: %d\n",file);
-	//printf("1.%p\n", block);
+    error = BF_UnpinBlock(block);
+    if( error != BF_OK) { BF_PrintError(error); return -1; }
 
+    error = BF_CloseFile(file);
+    if( error != BF_OK) { BF_PrintError(error); return -1; }
+	
     return 0;
 }
 
 HP_info* HP_OpenFile(char *fileName, int *file_desc){    
   printf("open:filename:%d\n", *fileName);
 
-	BF_ErrorCode err =  BF_OpenFile(fileName, file_desc);
-  BF_PrintError(err);
+	BF_ErrorCode error; 
+  error =  BF_OpenFile(fileName, file_desc);
+  if( error != BF_OK) { BF_PrintError(error); exit(EXIT_FAILURE); }
+   
   printf("open:filedesc:%d\n", *file_desc);
+  
   BF_Block *block = NULL;
-  BF_Block_Init(&block);            // it may not be necessary
-  BF_AllocateBlock(*file_desc,block);     //allocate the first block of the file
+  BF_Block_Init(&block);
+  
+  
+  int block_num;
+  error = BF_GetBlockCounter(*file_desc, &block_num);
+	if( error != BF_OK) { BF_PrintError(error);  exit(EXIT_FAILURE); }
 
-	//printf("opened--1\n");
+  printf("number_of_blocks:%d\n", block_num);
 
-	
-	BF_ErrorCode err2 = BF_GetBlock(*file_desc, 0 , block);
-  BF_PrintError(err);
+  error = BF_GetBlock(*file_desc, block_num - 1 , block);
+  if( error != BF_OK) { BF_PrintError(error);  exit(EXIT_FAILURE); }
 		
 	HP_info* hp_info;
   hp_info = (HP_info*)BF_Block_GetData(block);
-  
-	//memcpy(hp_info, data, sizeof(data));
 
-	//BF_AllocateBlock(*file_desc, block);
-	//HP_block_info *block_info;
-	
-	//block_info = (HP_block_info *) block + BF_BLOCK_SIZE - sizeof(HP_block_info);
-	
-	//hp_info = (HP_info*)block;
-	//pinfo->file_records = 8;
-  	//pinfo = (HP_info*) block;
-
-	//void* data;
-  	//HP_block_info kati;
-
-	//block_info = &kati;
+	printf("open:file_records: %d\n", hp_info->file_records);
 
 
-	//BF_GetBlock(*file_desc, block_id, block);
-	//data = BF_Block_GetData(block);
-	//pinfo = (HP_info*)block;
+	error = BF_UnpinBlock(block);
+  if( error != BF_OK) { BF_PrintError(error);  exit(EXIT_FAILURE); }
 
-	//printf("blaaa: %d\n", pinfo->file_records);
-	//printf("2.%p\n", block);
-	//pinfo->file_records += block_info->block_records;
-	printf("blaaa: %d\n", hp_info->file_records);
-
-
-	//info = (HP_info*) block + BF_BLOCK_SIZE - sizeof(HP_block_info);
-
-	//BF_UnpinBlock(block);
-	BF_Block_Destroy(&block);
+	//BF_Block_Destroy(&block);
 	
 	return hp_info;
 
@@ -129,7 +102,7 @@ int HP_CloseFile(int file_desc,HP_info* hp_info ){
     //printf("FILEEEE: %d\n",file_desc);
     BF_ErrorCode err = BF_CloseFile(file_desc);
     //printf("closed--2\n");
-    if( err =! BF_OK) {
+    if( err != BF_OK) {
      BF_PrintError(err);
      printf("\nerror_code:%d\n", err);
       return -1;
