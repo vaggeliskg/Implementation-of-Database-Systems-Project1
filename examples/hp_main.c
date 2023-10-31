@@ -5,7 +5,7 @@
 #include "bf.h"
 #include "hp_file.h"
 
-#define RECORDS_NUM 1000 // you can change it if you want
+#define RECORDS_NUM 1000 // you can change it if you want // mhn jexasoume na to ksanavaloume 1000
 #define FILE_NAME "data.db"
 
 #define CALL_OR_DIE(call)     \
@@ -33,6 +33,10 @@ int main() {
     record = randomRecord();
     HP_InsertEntry(file_desc,hp_info2, record);
   }
+  int block_num;
+  BF_GetBlockCounter(file_desc, &block_num);
+  
+  printf("number_of_blocks:%d\n", block_num);
 
   printf("RUN PrintAllEntries\n");
   int id = rand() % RECORDS_NUM;

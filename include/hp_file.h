@@ -2,13 +2,20 @@
 #define HP_FILE_H
 #include <record.h>
 
+// Δομή στην οποία θα αποθηκεύετε πληροφορίες σε σχέση με το block όπως:
+// τον αριθμό των εγγραφών στο συγκεκριμένο block,
+// έναν δείκτη στο επόμενο block δεδομένων.
 typedef struct {
     int block_records;
+    BF_Block* next_block;
 } HP_block_info;
 
 /* Η δομή HP_info κρατάει μεταδεδομένα που σχετίζονται με το αρχείο σωρού*/
 typedef struct {
     int file_records;
+    int available_space;
+    int last_block_id;
+    BF_Block* last_block;
 } HP_info;
 
 /*Η συνάρτηση HP_CreateFile χρησιμοποιείται για τη δημιουργία και
