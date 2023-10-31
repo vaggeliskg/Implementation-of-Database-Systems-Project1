@@ -30,6 +30,7 @@ int main() {
   int r;
   printf("Insert Entries\n");
   for (int id = 0; id < RECORDS_NUM; ++id) {
+    printf("\n==>LOOP:%d\n", id+1);
     record = randomRecord();
     HP_InsertEntry(file_desc,hp_info2, record);
   }
