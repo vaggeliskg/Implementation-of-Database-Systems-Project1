@@ -5,7 +5,7 @@
 #include "bf.h"
 #include "hp_file.h"
 
-#define RECORDS_NUM 1000 // you can change it if you want // mhn jexasoume na to ksanavaloume 1000
+#define RECORDS_NUM 10 // you can change it if you want // mhn jexasoume na to ksanavaloume 1000
 #define FILE_NAME "data.db"
 
 #define CALL_OR_DIE(call)     \
@@ -22,8 +22,9 @@ int main() {
   printf("main:filename:%s\n", FILE_NAME);
   HP_CreateFile(FILE_NAME);
   int file_desc;
-  printf("main:file_desc:%d\n", file_desc);
+
   HP_info* hp_info2=HP_OpenFile(FILE_NAME, &file_desc);
+  printf("main:file_desc:%d\n", file_desc);
   
   Record record;
   srand(12569874);
@@ -37,12 +38,11 @@ int main() {
   int block_num;
   BF_GetBlockCounter(file_desc, &block_num);
   
-  printf("number_of_blocks:%d\n", block_num);
 
   printf("RUN PrintAllEntries\n");
   int id = rand() % RECORDS_NUM;
-  printf("\nSearching for: %d",id);
-  HP_GetAllEntries(file_desc,hp_info2, id);
+  printf("\nSearching for: %d", id);
+  HP_GetAllEntries(file_desc, hp_info2, id);
 
   HP_CloseFile(file_desc,hp_info2);
   BF_Close();
