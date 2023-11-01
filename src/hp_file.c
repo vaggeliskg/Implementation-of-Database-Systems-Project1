@@ -141,8 +141,8 @@ int HP_InsertEntry(int file_desc, HP_info* hp_info, Record record){
     
     /*Get data from the last_block (the newest) and copy block_info in the end of the block*/
     data = BF_Block_GetData(hp_info->last_block);
-    block_info = (HP_block_info*)data + BF_BLOCK_SIZE - sizeof(block_info);    				//***************
-	memcpy(data + BF_BLOCK_SIZE - sizeof(block_info), block_info, sizeof(block_info));
+    block_info = (HP_block_info*)data + BF_BLOCK_SIZE - sizeof(block_info);    			//***************
+	//memcpy(data + BF_BLOCK_SIZE - sizeof(block_info), block_info, sizeof(block_info));
     
     /*Insert records based to available space*/
 	
@@ -159,10 +159,9 @@ int HP_InsertEntry(int file_desc, HP_info* hp_info, Record record){
     }
     else{
 
-    	block_info->block_records = 0;                                                    	// New block, zero records
     	error = BF_UnpinBlock(hp_info->last_block);                                       	// Unpin the previous block
       	if( error != BF_OK) { BF_PrintError(error); return -1; }
-      
+		//BF_Block_Destroy(&hp_info->last_block); havent used it yet
       
 		BF_Block *new_block = NULL;                                                       	// Create new block
 		BF_Block_Init(&new_block);
@@ -173,14 +172,19 @@ int HP_InsertEntry(int file_desc, HP_info* hp_info, Record record){
 		hp_info->available_space = BF_BLOCK_SIZE - sizeof(block_info);                 	  	// Available space like in the start
 		printf("s:%d\n", hp_info->available_space);
 		hp_info->last_block_id++;
+		printf("s1:%d\n", hp_info->available_space);
       	block_info->next_block = new_block;
-			
-      	data = BF_Block_GetData(hp_info->last_block);                                   	// Get the new data
-		block_info = (HP_block_info*)data + BF_BLOCK_SIZE - sizeof(block_info);    			// *************
-		memcpy(data + BF_BLOCK_SIZE - sizeof(block_info), block_info, sizeof(block_info));
-
-		memcpy(data + (block_info->block_records * record_size), &record, record_size);  	// **************
-
+		printf("s2:%d\n", hp_info->available_space);	
+      	char* data2 = BF_Block_GetData(new_block);                                   	// Get the new data
+		printf("s3:%d\n", hp_info->available_space);
+		block_info = (HP_block_info*)data2 + BF_BLOCK_SIZE - sizeof(block_info);    			// *************
+		//memcpy(data + BF_BLOCK_SIZE - sizeof(block_info), block_info, sizeof(block_info));
+		printf("s4:%d\n", hp_info->available_space);
+		printf("wtf:%p\n",data2);
+		printf("wtf_rec:%p\n", &record);
+		block_info->block_records = 0;                                                    	// New block, zero records
+		memcpy(data2, &record, record_size);  	// **************
+		printf("s5:%d\n", hp_info->available_space);
 		block_info->block_records++;                                                      	// Update block records
 		hp_info->file_records++;                                                          	// File records
 		hp_info->available_space = hp_info->available_space - record_size;                	// And available space
@@ -235,7 +239,7 @@ int HP_GetAllEntries(int file_desc, HP_info* hp_info, int value){
 
         for(int j = 0; j < block_info->block_records; j++) {
         	if(record[j].id == 4) {
-        		printRecord(*record);
+        		//printRecord(*record);
           	}	
           
         }
