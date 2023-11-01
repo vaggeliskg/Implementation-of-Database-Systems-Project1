@@ -113,77 +113,78 @@ int HP_CloseFile(int file_desc,HP_info* hp_info ){
 int HP_InsertEntry(int file_desc, HP_info* hp_info, Record record){
     BF_ErrorCode error;
     int record_size = sizeof(record);
-    /*Init and allocate blocks*/
+
+    /*Number of blocks that file_desc has*/
     int blocks_num; 
     error = BF_GetBlockCounter(file_desc, &blocks_num); 
     if( error != BF_OK) { BF_PrintError(error);  return -1; }
-    
+
+    /*Init and allocate blocks*/
     HP_block_info* block_info;
     char* data;
 
+    /*Creating the 2nd block of the file, which is going to be the 1st block to write the record in*/
     if(hp_info->last_block_id == 0){
 
-      BF_Block *block = NULL;                                       //create a block for a records(needs check)
+      BF_Block *block = NULL;
       BF_Block_Init(&block);
       error = BF_AllocateBlock(file_desc,block); 
       if( error != BF_OK) { BF_PrintError(error);  return -1; }
 
-      hp_info->last_block = block;
-      hp_info->available_space = BF_BLOCK_SIZE - sizeof(HP_block_info);
-      hp_info->last_block_id++;
+      hp_info->last_block = block;                                                    // last_block is the one that we created
+      hp_info->available_space = BF_BLOCK_SIZE - sizeof(HP_block_info);               // Available space is BF_BLOCK_SIZE - sizeof(HP_block_info)
+      hp_info->last_block_id++;                                                       // Last block id = 1 (in the start)
 
       BF_Block_SetDirty(hp_info->last_block);
     }
     
+    /*Get data from the last_block (the newest) and copy block_info in the end of the block*/
     data = BF_Block_GetData(hp_info->last_block);
     //block_info = (HP_block_info*)data;//+ BF_BLOCK_SIZE - sizeof(HP_block_info);    //***************
-	memcpy(data + hp_info->available_space, block_info, sizeof(HP_block_info));
+	  memcpy(data + hp_info->available_space, block_info, sizeof(HP_block_info));
     
-    // Insert records
+    /*Insert records based to available space*/
     if(record_size <= hp_info->available_space){
       
-      	memcpy(data + (block_info->block_records * record_size), &record, record_size);   // *********** old:data + (BF_BLOCK_SIZE - hp_info->available_space), (block_info->block_records * record_size)
+      memcpy(data + (block_info->block_records * record_size), &record, record_size);   // *********** old:data + (BF_BLOCK_SIZE - hp_info->available_space), (block_info->block_records * record_size)
       
-      	block_info->block_records++;
+      block_info->block_records++;                                                      // Records inside current block +1
+      hp_info->available_space = hp_info->available_space - record_size;                // Update available space
+      hp_info->file_records++;                                                          // Records inside file(total) +1
       
-      	hp_info->available_space = hp_info->available_space - record_size;
-      
-      	hp_info->file_records++;
-      
-      	BF_Block_SetDirty(hp_info->last_block);
+      BF_Block_SetDirty(hp_info->last_block);
     }
     else{
-    	block_info->block_records = 0;
-      	error = BF_UnpinBlock(hp_info->last_block);
-      	if( error != BF_OK) { BF_PrintError(error); return -1; }
-      
-      
-			//printf("yes1\n");
-				
-			//printf("yes1\n");
-			BF_Block *next_block = NULL;                                       //create a block for a records(needs check)
-			BF_Block_Init(&next_block);
-			error = BF_AllocateBlock(file_desc, next_block); 
-      		if( error != BF_OK) { BF_PrintError(error);  return -1; }
-      
-			hp_info->last_block = next_block;
-			hp_info->available_space = BF_BLOCK_SIZE - sizeof(HP_block_info);
-			hp_info->last_block_id++;
 
-			block_info->next_block = next_block;
-			data = BF_Block_GetData(next_block);
-			//block_info = (HP_block_info*)data;//+ BF_BLOCK_SIZE - sizeof(HP_block_info);           // *************
+    	block_info->block_records = 0;                                                    // New block, zero records
+      error = BF_UnpinBlock(hp_info->last_block);                                       // Unpin the previous block
+      if( error != BF_OK) { BF_PrintError(error); return -1; }
+      
+      
+			BF_Block *new_block = NULL;                                                       // Create new block
+			BF_Block_Init(&new_block);
+			error = BF_AllocateBlock(file_desc, new_block); 
+      if( error != BF_OK) { BF_PrintError(error);  return -1; }
+      
+			hp_info->last_block = new_block;                                                  // Now the last block, is the new block created
+			hp_info->available_space = BF_BLOCK_SIZE - sizeof(HP_block_info);                 // Available space like in the start
+			hp_info->last_block_id++;
+      block_info->next_block = new_block;
+			
+      data = BF_Block_GetData(hp_info->last_block);                                     // Get the new data
+			//block_info = (HP_block_info*)data;//+ BF_BLOCK_SIZE - sizeof(HP_block_info);    // *************
 			memcpy(data + hp_info->available_space, block_info, sizeof(HP_block_info));
 
-			memcpy(data + (block_info->block_records * record_size), &record, record_size); // **************
+			memcpy(data + (block_info->block_records * record_size), &record, record_size);   // **************
 
-			block_info->block_records++;
-			hp_info->file_records++;
-			
-			hp_info->available_space - record_size;
+			block_info->block_records++;                                                      // Update block records
+			hp_info->file_records++;                                                          // File records
+			hp_info->available_space - record_size;                                           // And available space
 			
 			BF_Block_SetDirty(hp_info->last_block);
     	}
+    
+    ///////// DEBUG ///////////////
     
     int bla;
     BF_GetBlockCounter(file_desc,&bla);
@@ -192,10 +193,12 @@ int HP_InsertEntry(int file_desc, HP_info* hp_info, Record record){
     printf("blocks: %d\n",bla);
     printf("blocks_to_write: %d\n",bla-1);
     printf("last_block_id: %d\n", hp_info->last_block_id);
-	printf("data address: %p\n",data);
-	printf("block address: %p\n",hp_info->last_block);
+	  printf("data address: %p\n",data);
+	  printf("block address: %p\n",hp_info->last_block);
 	
-	//printf("byte difference:%ld\n",(data - (char*)hp_info->last_block)* sizeof(int));
+	  //printf("byte difference:%ld\n",(data - (char*)hp_info->last_block)* sizeof(int));
+    
+    ////////// END DEBUG ////////////
     
     return hp_info->last_block_id;
 
