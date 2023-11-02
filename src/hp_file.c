@@ -128,14 +128,14 @@ int HP_InsertEntry(int file_desc, HP_info* hp_info, Record record){
       	BF_Block_SetDirty(hp_info->last_block);
     }
     
-    /*Get data from the last_block (the newest) and copy block_info at the start of the block*/
+    /*Get data from the last_block (the newest) and copy block_info at the end of the block*/
     data = BF_Block_GetData(hp_info->last_block);
-    block_info = (HP_block_info*)data;
+    block_info = (HP_block_info*)(data + BF_BLOCK_SIZE - sizeof(block_info));
     
     /*Insert records based to available space*/
     if(record_size <= hp_info->available_space){
-		// Copy record after block_info, and after the other records that have been copied
-      	memcpy(data + sizeof(block_info) + (block_info->block_records * record_size), &record, record_size);
+		// Copy record after the other records that have been copied, if there are any
+      	memcpy(data + (block_info->block_records * record_size), &record, record_size);
 		
 		block_info->block_records++;                                                     	// Records inside current block +1
       	hp_info->available_space = hp_info->available_space - record_size;                	// Update available space
@@ -161,11 +161,11 @@ int HP_InsertEntry(int file_desc, HP_info* hp_info, Record record){
 		
       	data = BF_Block_GetData(new_block);                                   				// Get the new data
 
-		block_info = (HP_block_info*)data;
+		block_info = (HP_block_info*)(data + BF_BLOCK_SIZE - sizeof(block_info));			// Save block_info at the end of block(data)
 		block_info->block_records = 0;                                                    	// New block, zero records
 
-		//Copy record after block_info because there are no records in the new block yet
-		memcpy(data + sizeof(block_info), &record, record_size);
+		//Copy record at the start of block(data) because there are no records in the new block yet
+		memcpy(data, &record, record_size);
 		
 		block_info->block_records++;                                                      	// Update block records
 		hp_info->file_records++;                                                          	// File records
@@ -202,8 +202,8 @@ int HP_GetAllEntries(int file_desc, HP_info* hp_info, int value){
         
 		char* data = BF_Block_GetData(block);										// Get it's data
         
-		block_info = (HP_block_info*)data;
-        record =(Record*)(data + sizeof(block_info));								// First record of block is after block_info
+		block_info = (HP_block_info*)(data + BF_BLOCK_SIZE -sizeof(block_info));
+        record =(Record*)(data);													// First record of block is at start of block
         
 		for(int j = 0; j < block_info->block_records; j++) {						// For each record inside the block
         	if(record[j].id == value) {												// If value is found
