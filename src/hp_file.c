@@ -134,25 +134,26 @@ int HP_InsertEntry(int file_desc, HP_info* hp_info, Record record){
       	hp_info->last_block = block;                                                    	// last_block is the one that we created
       	hp_info->available_space = BF_BLOCK_SIZE - sizeof(block_info);               		// Available space is BF_BLOCK_SIZE - sizeof(HP_block_info)
       	hp_info->last_block_id++;                                                       	// Last block id = 1 (in the start)
-		printf("space0: %d\n",hp_info->available_space);
+		//printf("space0: %d\n",hp_info->available_space);
 
       	BF_Block_SetDirty(hp_info->last_block);
     }
     
     /*Get data from the last_block (the newest) and copy block_info in the end of the block*/
     data = BF_Block_GetData(hp_info->last_block);
-    block_info = (HP_block_info*)data + BF_BLOCK_SIZE - sizeof(block_info);    			//***************
-	//memcpy(data + BF_BLOCK_SIZE - sizeof(block_info), block_info, sizeof(block_info));
+    block_info = (HP_block_info*)data;// + BF_BLOCK_SIZE - sizeof(block_info);    			//***************
     
     /*Insert records based to available space*/
 	
     if(record_size <= hp_info->available_space){
       
-      	memcpy(data + (block_info->block_records * record_size), &record, record_size);   	// *********** old:data + (BF_BLOCK_SIZE - hp_info->available_space), (block_info->block_records * record_size)
-      
-      	block_info->block_records++;                                                     	// Records inside current block +1
+      	memcpy(data + sizeof(block_info) + (block_info->block_records * record_size), &record, record_size);   	// *********** old:data + (BF_BLOCK_SIZE - hp_info->available_space), (block_info->block_records * record_size)
+		
+		Record* rec =(Record*)(data + sizeof(block_info) +(block_info->block_records * record_size)); //+ (block_info->block_records * record_size);
+		printRecord(*rec);
+		block_info->block_records++;                                                     	// Records inside current block +1
       	hp_info->available_space = hp_info->available_space - record_size;                	// Update available space
-      	printf("space1: %d\n",hp_info->available_space);
+		//printf("\nspace1: %d\n",hp_info->available_space);	
 	  	hp_info->file_records++;                                                          	// Records inside file(total) +1
       
       	BF_Block_SetDirty(hp_info->last_block);
@@ -170,25 +171,30 @@ int HP_InsertEntry(int file_desc, HP_info* hp_info, Record record){
       
 		hp_info->last_block = new_block;                                                  	// Now the last block, is the new block created
 		hp_info->available_space = BF_BLOCK_SIZE - sizeof(block_info);                 	  	// Available space like in the start
-		printf("s:%d\n", hp_info->available_space);
+		//printf("s:%d\n", hp_info->available_space);
 		hp_info->last_block_id++;
-		printf("s1:%d\n", hp_info->available_space);
+		//printf("s1:%d\n", hp_info->available_space);
       	block_info->next_block = new_block;
-		printf("s2:%d\n", hp_info->available_space);	
+		//printf("s2:%d\n", hp_info->available_space);	
       	char* data2 = BF_Block_GetData(new_block);                                   	// Get the new data
-		printf("s3:%d\n", hp_info->available_space);
-		block_info = (HP_block_info*)data2 + BF_BLOCK_SIZE - sizeof(block_info);    			// *************
+		//printf("s3:%d\n", hp_info->available_space);
+
+		block_info = (HP_block_info*)data2;// + BF_BLOCK_SIZE - sizeof(block_info);    			// *************
+
 		//memcpy(data + BF_BLOCK_SIZE - sizeof(block_info), block_info, sizeof(block_info));
-		printf("s4:%d\n", hp_info->available_space);
-		printf("wtf:%p\n",data2);
-		printf("wtf_rec:%p\n", &record);
+		//printf("s4:%d\n", hp_info->available_space);
+		//printf("wtf:%p\n",data2);
+		//printf("wtf_rec:%p\n", &record);
 		block_info->block_records = 0;                                                    	// New block, zero records
-		memcpy(data2, &record, record_size);  	// **************
-		printf("s5:%d\n", hp_info->available_space);
+
+		memcpy(data2 + sizeof(block_info), &record, record_size);  	// **************
+		Record* rec =(Record*)(data2 + sizeof(block_info)); //+ (block_info->block_records * record_size);
+		printRecord(*rec);
+		//printf("s5:%d\n", hp_info->available_space);
 		block_info->block_records++;                                                      	// Update block records
 		hp_info->file_records++;                                                          	// File records
 		hp_info->available_space = hp_info->available_space - record_size;                	// And available space
-		printf("space2: %d\n",hp_info->available_space);
+		//printf("\nspace2: %d\n",hp_info->available_space);
 			
 		BF_Block_SetDirty(hp_info->last_block);
     }
@@ -198,12 +204,12 @@ int HP_InsertEntry(int file_desc, HP_info* hp_info, Record record){
     int bla;
     BF_GetBlockCounter(file_desc,&bla);
     printf("block_records:%d\n", block_info->block_records);
-    printf("file_records: %d\n",hp_info->file_records);
-    printf("blocks: %d\n",bla);
-    printf("blocks_to_write: %d\n",bla-1);
-    printf("last_block_id: %d\n", hp_info->last_block_id);
-	printf("data address: %p\n",data);
-	printf("block address: %p\n",hp_info->last_block);
+    // printf("file_records: %d\n",hp_info->file_records);
+    // printf("blocks: %d\n",bla);
+    // printf("blocks_to_write: %d\n",bla-1);
+    // printf("last_block_id: %d\n", hp_info->last_block_id);
+	// printf("data address: %lu\n",(unsigned long)data);
+	// printf("block address: %lu\n",(unsigned long)hp_info->last_block);
 	
 	//printf("byte difference:%ld\n",(data - (char*)hp_info->last_block)* sizeof(int));
     
@@ -235,12 +241,11 @@ int HP_GetAllEntries(int file_desc, HP_info* hp_info, int value){
         if( error != BF_OK) { BF_PrintError(error);  return -1; }
         char* data = BF_Block_GetData(block);
         block_info = (HP_block_info*)data;
-        record =(Record*) block_info; //*************
-
+        record =(Record*)(data + sizeof(block_info)); //*************
         for(int j = 0; j < block_info->block_records; j++) {
-        	if(record[j].id == 4) {
-        		//printRecord(*record);
-          	}	
+        	//if(record[j].id == value) {
+        		//printRecord(*record );
+          	//}	
           
         }
 		blocks_read++;

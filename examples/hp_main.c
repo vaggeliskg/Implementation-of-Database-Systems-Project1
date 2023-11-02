@@ -5,7 +5,7 @@
 #include "bf.h"
 #include "hp_file.h"
 
-#define RECORDS_NUM 1000 // you can change it if you want // mhn jexasoume na to ksanavaloume 1000
+#define RECORDS_NUM 1000 // you can change it if you want
 #define FILE_NAME "data.db"
 
 #define CALL_OR_DIE(call)     \
