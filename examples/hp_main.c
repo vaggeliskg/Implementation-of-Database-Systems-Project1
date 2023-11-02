@@ -19,19 +19,16 @@
 
 int main() {
   BF_Init(LRU);
-  printf("main:filename:%s\n", FILE_NAME);
   HP_CreateFile(FILE_NAME);
   int file_desc;
 
   HP_info* hp_info2=HP_OpenFile(FILE_NAME, &file_desc);
-  printf("main:file_desc:%d\n", file_desc);
   
   Record record;
   srand(12569874);
   int r;
   printf("Insert Entries\n");
   for (int id = 0; id < RECORDS_NUM; ++id) {
-    printf("\n==>LOOP:%d\n", id+1);
     record = randomRecord();
     HP_InsertEntry(file_desc,hp_info2, record);
   }
