@@ -86,7 +86,7 @@ int HP_CloseFile(int file_desc,HP_info* hp_info ){
 	if( error != BF_OK) { BF_PrintError(error);  return -1; }
 
 
-    error = BF_GetBlock(file_desc, block_num - 1 , block);							// Get the first block(file header)
+    error = BF_GetBlock(file_desc, 0, block);							            // Get the first block(file header)
     if( error != BF_OK) { printf("\n"); BF_PrintError(error);  return -1; }
     
     error = BF_UnpinBlock(block);													// Unpin the file header
