@@ -57,12 +57,8 @@ HP_info* HP_OpenFile(char *fileName, int *file_desc){
   
   	BF_Block *block = NULL;
   	BF_Block_Init(&block);
-  
-  	int block_num;									
-  	error = BF_GetBlockCounter(*file_desc, &block_num);	 					// Get the first block 
-	if( error != BF_OK) { BF_PrintError(error);  exit(EXIT_FAILURE); }		//which holds the wanted information
 
-  	error = BF_GetBlock(*file_desc, block_num - 1 , block);
+  	error = BF_GetBlock(*file_desc, 0 , block);
   	if( error != BF_OK) { BF_PrintError(error);  exit(EXIT_FAILURE); }
 		
 	HP_info* hp_info;														// Store the information in hp_info
@@ -80,19 +76,15 @@ int HP_CloseFile(int file_desc,HP_info* hp_info ){
 	BF_ErrorCode error;
 
     BF_Block *block = NULL;
-    BF_Block_Init(&block);   
-    int block_num;
-    error = BF_GetBlockCounter(file_desc, &block_num);								// Get the number of blocks
-	if( error != BF_OK) { BF_PrintError(error);  return -1; }
-
+    BF_Block_Init(&block);
 
     error = BF_GetBlock(file_desc, 0, block);							            // Get the first block(file header)
     if( error != BF_OK) { printf("\n"); BF_PrintError(error);  return -1; }
     
     error = BF_UnpinBlock(block);													// Unpin the file header
     if( error != BF_OK) { printf("\n"); BF_PrintError(error);  return -1; }
-    BF_Block_Destroy(&block);														// Destroy the file header
     
+    BF_Block_Destroy(&block);														// Destroy the file header
     
     error = BF_CloseFile(file_desc);												// Close the file
     if( error != BF_OK) { BF_PrintError(error);  return -1; }
@@ -146,9 +138,10 @@ int HP_InsertEntry(int file_desc, HP_info* hp_info, Record record){
     }
     else{
 
-    	error = BF_UnpinBlock(hp_info->last_block);                                       	// Unpin the previous block
+    	error = BF_UnpinBlock(hp_info->last_block);                                       	// Unpin and destroy the previous block
       	if( error != BF_OK) { BF_PrintError(error); return -1; }
-      
+        BF_Block_Destroy(&hp_info->last_block);
+
 		BF_Block *new_block = NULL;                                                       	// Create new block
 		BF_Block_Init(&new_block);
 		error = BF_AllocateBlock(file_desc, new_block); 
@@ -173,7 +166,7 @@ int HP_InsertEntry(int file_desc, HP_info* hp_info, Record record){
 			
 		BF_Block_SetDirty(hp_info->last_block);
     }
-    
+
     return hp_info->last_block_id;
 
 }
@@ -217,6 +210,8 @@ int HP_GetAllEntries(int file_desc, HP_info* hp_info, int value){
 		error = BF_UnpinBlock(block);
   		if( error != BF_OK) { BF_PrintError(error); return -1; }
     }
-	
+
+	BF_Block_Destroy(&block);
+    
     return blocks_read;
 }
