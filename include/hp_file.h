@@ -1,5 +1,6 @@
 #ifndef HP_FILE_H
 #define HP_FILE_H
+#define RECORDS_NUM 1000
 #include <record.h>
 
 // Δομή στην οποία θα αποθηκεύετε πληροφορίες σε σχέση με το block όπως:

@@ -5,7 +5,8 @@
 #include "bf.h"
 #include "hp_file.h"
 
-#define RECORDS_NUM 1000 // you can change it if you want
+// RECORDS_NUM moved and defined in hp_file.h
+
 #define FILE_NAME "data.db"
 
 #define CALL_OR_DIE(call)     \
