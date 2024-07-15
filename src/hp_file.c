@@ -183,7 +183,7 @@ int HP_GetAllEntries(int file_desc, HP_info* hp_info, int value){
     CALL_BF(BF_GetBlockCounter(file_desc, &blocks_number));
 
     printf("\n");
-	int blocks_read = 0;															// No blocks read yet
+	int blocks_read = 0;															// No blocks read yet!
     
 	for(int i = 0; i < blocks_number; i++){
 
